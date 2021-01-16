@@ -1,0 +1,34 @@
+main: kr.nuyar.www.twitchbot.TwitchBot
+name: TwitchBot
+version: '0.1'
+description: make your own Twitch bot for your server.
+author: nuYaR
+website: www.nuyar.kr
+
+commands:
+  twitchbot:
+    description: Manage TwitchBot plugin
+    permission: twitchbot.status
+    permission-message: You do not have permission!
+
+permissions:
+  twitchbot.status.*:
+    description: Allows to check all bots status
+    default: op
+  twitchbot.manage.*:
+    description: Allows to start/stop/restart all bots
+    default: op
+    children:
+      twitchbot.status.*: true
+  twitchbot.reload:
+    description: Allows to reload config and restart all bots.
+    default: op
+    children:
+      twitchbot.manage.*: true
+  twitchbot.*:
+    description: Wildcard permission
+    default: op
+    children:
+      twitchbot.status.*: true
+      twitchbot.manage.*: true
+      twitchbot.reload: true
