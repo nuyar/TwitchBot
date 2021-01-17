@@ -3,6 +3,9 @@ package kr.nuyar.www.twitchbot;
 import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 
+import java.util.List;
+import java.util.stream.Collectors;
+
 public class Reward {
     String reward;
     int subscription;
@@ -11,7 +14,7 @@ public class Reward {
     String msgWrongUsage;
     String msgResponse;
     String msgBroadcast;
-    String execute;
+    List<String> execute;
 
     public void processMessage(Message msg) {
         if(!this.reward.equals(msg.tags.get("custom-reward-id")))
@@ -24,49 +27,27 @@ public class Reward {
             return;
         }
 
-        String[] arguments = msg.message.split(" ");
+        String argstr = msg.message.trim().replaceAll("\\(arguments(\\[\\d+\\])*\\)","").replaceAll("[ ]{2,}"," ");
+
+        String[] arguments;
+        if (argstr.isEmpty())
+            arguments = new String[]{};
+        else
+            arguments = argstr.split(" ");
         if(this.arguments != -1 && arguments.length != this.arguments) {
-            if(this.msgWrongUsage != null) msg.responseMessage(this.msgWrongUsage);
+            if(this.msgWrongUsage != null) msg.responseMessage(msg.replaceKeys(this.msgWrongUsage));
             return;
         }
 
-        String response = this.msgResponse;
-        String broadcast = this.msgBroadcast;
-        String execute = this.execute;
-        if(response != null) {
-            response = msg.replaceKeys(response);
-            for (int i = 1; i < arguments.length; i++) {
-                response = response.replaceAll("\\(arguments\\["+(i-1)+"\\]\\)", arguments[i]);
-            }
-            if (arguments.length > 0) {
-                response = response.replaceAll("\\(arguments\\)", msg.message.substring(msg.message.indexOf(' ')));
-            }
-        }
-        if(broadcast != null) {
-            broadcast = msg.replaceKeys(broadcast);
-            for (int i = 1; i < arguments.length; i++) {
-                broadcast = broadcast.replaceAll("\\(arguments\\["+(i-1)+"\\]\\)", arguments[i]);
-            }
-            if (arguments.length > 0) {
-                broadcast = broadcast.replaceAll("\\(arguments\\)", msg.message.substring(msg.message.indexOf(' ')));
-            }
-        }
-        if(execute != null) {
-            execute = msg.replaceKeys(execute);
-            for (int i = 1; i < arguments.length; i++) {
-                execute = execute.replaceAll("\\(arguments\\["+(i-1)+"\\]\\)", arguments[i]);
-            }
-            if (arguments.length > 0) {
-                execute = execute.replaceAll("\\(arguments\\)", msg.message.substring(msg.message.indexOf(' ')));
-            }
-        }
+        String response = Message.replaceArguments(msg.replaceKeys(this.msgResponse),arguments,argstr);
+        String broadcast = Message.replaceArguments(msg.replaceKeys(this.msgBroadcast),arguments,argstr);
+        List<String> execute = this.execute.stream().map(ex -> Message.replaceArguments(msg.replaceKeys(ex),arguments,argstr)).collect(Collectors.toList());
+
 
         if(response != null)  msg.responseMessage(response);
-        String finalExecute = execute;
-        String finalBroadcast = broadcast;
         Bukkit.getScheduler().runTask(TwitchBot.plugin, () -> {
-            if(finalBroadcast != null) Bukkit.broadcastMessage(finalBroadcast);
-            if(finalExecute != null) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalExecute);
+            if(broadcast != null) Bukkit.broadcastMessage(broadcast);
+            execute.forEach(ex -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), ex));
         });
     }
 
@@ -87,8 +68,7 @@ public class Reward {
         if(reward.msgResponse != null && reward.msgResponse.trim().isEmpty()) reward.msgResponse = null;
         reward.msgBroadcast = section.getString("msg.broadcast", null);
         if(reward.msgBroadcast != null && reward.msgBroadcast.trim().isEmpty()) reward.msgBroadcast = null;
-        reward.execute = section.getString("execute",null);
-        if(reward.execute != null && reward.execute.trim().isEmpty()) reward.execute = null;
+        reward.execute = section.getStringList("execute");
 
         return reward;
     }

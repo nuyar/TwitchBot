@@ -10,6 +10,7 @@ import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
+import java.util.stream.Stream;
 
 public class TwitchBot extends JavaPlugin {
     public static TwitchBot plugin;
@@ -54,7 +55,6 @@ public class TwitchBot extends JavaPlugin {
 
     @Override
     public boolean onCommand(CommandSender sender, Command command, String label, String[] args) {
-
         if (args.length == 1 && args[0].equals("status")) {
             List<Channel> chs = this.channels.stream().filter(ch -> sender.hasPermission("twitchbot.status.*") || sender.hasPermission("twitchbot.status." + ch.channel)).collect(Collectors.toList());
 
@@ -215,7 +215,7 @@ public class TwitchBot extends JavaPlugin {
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return Arrays.asList("status", "start", "stop", "restart", "reload").stream().filter(cmd -> cmd.startsWith(args[0])).collect(Collectors.toList());
+            return Stream.of("status", "start", "stop", "restart", "reload").filter(cmd -> cmd.startsWith(args[0])).collect(Collectors.toList());
         }
         if (args.length == 2 && Arrays.asList("status", "start", "stop", "restart").contains(args[0])) {
             return channels.stream().map(channel -> channel.channel).filter(channel -> channel.startsWith(args[1])).collect(Collectors.toList());

@@ -38,7 +38,7 @@ public class Channel {
     void startIRC() {
         if (this.anonymous) {
             Random random = new Random(System.currentTimeMillis());
-            this.nickname = "justinfan" + String.valueOf(random.nextInt(9000) + 1000);
+            this.nickname = "justinfan" + (random.nextInt(9000) + 1000);
             this.oauth = "miner0308";
         }
 
@@ -78,8 +78,6 @@ public class Channel {
         if (channel.anonymous || channel.nickname == null || channel.nickname.isEmpty() ||
                 channel.oauth == null || channel.oauth.isEmpty()) {
             channel.anonymous = true;
-        } else {
-
         }
         channel.commands = new ArrayList<>();
         if (section.getConfigurationSection("commands") != null)

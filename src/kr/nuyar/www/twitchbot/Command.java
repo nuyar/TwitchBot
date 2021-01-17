@@ -4,6 +4,7 @@ import org.bukkit.Bukkit;
 import org.bukkit.configuration.ConfigurationSection;
 
 import java.util.List;
+import java.util.stream.Collectors;
 
 public class Command {
     String command;
@@ -14,67 +15,45 @@ public class Command {
     String msgWrongUsage;
     String msgResponse;
     String msgBroadcast;
-    String execute;
+    List<String> execute;
 
     public void processMessage(Message msg) {
-        boolean is = false;
-        is = is || msg.message.equals(this.command) || msg.message.startsWith(this.command + " ");
+        String cmd = null;
+        if(msg.message.equals(this.command) || msg.message.startsWith(this.command + " "))
+            cmd = this.command;
         for (String alias : aliases) {
-            is = is || msg.message.equals(alias) || msg.message.startsWith(alias + " ");
+            if(msg.message.equals(alias) || msg.message.startsWith(alias + " "))
+                cmd = alias;
         }
-        if(!is) return;
+        if(cmd == null) return;
 
         Bukkit.getLogger().info(String.format("[TwitchBot] %s used command %s in #%s : %s", msg.user, this.command, msg.channel, msg.message));
 
         if(this.subscription > msg.subscribe) {
-            if(this.msgNoSubscription != null) msg.responseMessage(this.msgNoSubscription);
+            if(this.msgNoSubscription != null) msg.responseMessage(msg.replaceKeys(this.msgNoSubscription));
             return;
         }
 
-        String[] arguments = msg.message.split(" ");
-        if(this.arguments != -1 && arguments.length-1 != this.arguments) {
-            if(this.msgWrongUsage != null) msg.responseMessage(this.msgWrongUsage);
+        String argstr = msg.message.substring(cmd.length()).trim().replaceAll("\\(arguments(\\[\\d+\\])*\\)","").replaceAll("[ ]{2,}"," ");
+
+        String[] arguments;
+        if (argstr.isEmpty())
+            arguments = new String[]{};
+        else
+            arguments = argstr.split(" ");
+        if(this.arguments != -1 && arguments.length != this.arguments) {
+            if(this.msgWrongUsage != null) msg.responseMessage(msg.replaceKeys(this.msgWrongUsage));
             return;
         }
-
-        String response = this.msgResponse;
-        String broadcast = this.msgBroadcast;
-        String execute = this.execute;
-        if(response != null) {
-            response = msg.replaceKeys(response);
-            for (int i = 1; i < arguments.length; i++) {
-                response = response.replaceAll("\\(arguments\\["+(i-1)+"\\]\\)", arguments[i]);
-            }
-            if (arguments.length > 1) {
-                response = response.replaceAll("\\(arguments\\)", msg.message.substring(msg.message.indexOf(' ')+1));
-            }
-        }
-        if(broadcast != null) {
-            broadcast = msg.replaceKeys(broadcast);
-            for (int i = 1; i < arguments.length; i++) {
-                broadcast = broadcast.replaceAll("\\(arguments\\["+(i-1)+"\\]\\)", arguments[i]);
-            }
-            if (arguments.length > 1) {
-                broadcast = broadcast.replaceAll("\\(arguments\\)", msg.message.substring(msg.message.indexOf(' ')+1));
-            }
-        }
-        if(execute != null) {
-            execute = msg.replaceKeys(execute);
-            for (int i = 1; i < arguments.length; i++) {
-                execute = execute.replaceAll("\\(arguments\\["+(i-1)+"\\]\\)", arguments[i]);
-            }
-            if (arguments.length > 1) {
-                execute = execute.replaceAll("\\(arguments\\)", msg.message.substring(msg.message.indexOf(' ')+1));
-            }
-        }
-
+        
+        String response = Message.replaceArguments(msg.replaceKeys(this.msgResponse),arguments,argstr);
+        String broadcast = Message.replaceArguments(msg.replaceKeys(this.msgBroadcast),arguments,argstr);
+        List<String> execute = this.execute.stream().map(ex -> Message.replaceArguments(msg.replaceKeys(ex),arguments,argstr)).collect(Collectors.toList());
 
         if(response != null)  msg.responseMessage(response);
-        String finalExecute = execute;
-        String finalBroadcast = broadcast;
         Bukkit.getScheduler().runTask(TwitchBot.plugin, () -> {
-            if(finalBroadcast != null) Bukkit.broadcastMessage(finalBroadcast);
-            if(finalExecute != null) Bukkit.dispatchCommand(Bukkit.getConsoleSender(), finalExecute);
+            if(broadcast != null) Bukkit.broadcastMessage(broadcast);
+            execute.forEach(ex -> Bukkit.dispatchCommand(Bukkit.getConsoleSender(), ex));
         });
     }
 
@@ -92,8 +71,7 @@ public class Command {
         if(command.msgResponse != null && command.msgResponse.trim().isEmpty()) command.msgResponse = null;
         command.msgBroadcast = section.getString("msg.broadcast", null);
         if(command.msgBroadcast != null && command.msgBroadcast.trim().isEmpty()) command.msgBroadcast = null;
-        command.execute = section.getString("execute",null);
-        if(command.execute != null && command.execute.trim().isEmpty()) command.execute = null;
+        command.execute = section.getStringList("execute");
 
         return command;
     }

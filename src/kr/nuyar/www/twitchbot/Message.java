@@ -21,7 +21,6 @@ public class Message {
     boolean badge_subscriber;
     boolean badge_broadcaster;
     boolean badge_moderator;
-    boolean badge_turbo;
     String user_display_name;
     String room_id;
     String user_id;
@@ -59,10 +58,11 @@ public class Message {
     }
 
     public void responseMessage(String message) {
-        this.irc.sendMessage(this.replaceKeys(message));
+        this.irc.sendMessage(message);
     }
 
     public String replaceKeys(String message) {
+        if(message == null) return null;
         return StringUtils.replaceEach(message, REPLACE_KEY, new String[]{
                 String.valueOf(this.subscribe),
                 String.valueOf(this.badge_broadcaster),
@@ -74,5 +74,16 @@ public class Message {
                 this.user,
                 this.channel
         });
+    }
+
+    static String replaceArguments(String message, String[] args, String argstr) {
+        if(message == null) return null;
+        for (int i = 0; i < args.length; i++) {
+            message = message.replaceAll("\\(arguments\\["+i+"\\]\\)", args[i]);
+        }
+        if (args.length > 0) {
+            message = message.replaceAll("\\(arguments\\)", argstr);
+        }
+        return message;
     }
 }
