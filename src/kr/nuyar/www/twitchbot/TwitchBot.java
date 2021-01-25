@@ -203,21 +203,54 @@ public class TwitchBot extends JavaPlugin {
             return true;
         }
 
-        sender.sendMessage("/%s status : show all bots' short status");
-        sender.sendMessage("/%s status (channel) : show bot's status");
-        sender.sendMessage("/%s start (channel) : start bot");
-        sender.sendMessage("/%s stop (channel) : stop bot");
-        sender.sendMessage("/%s restart (channel) : restart bot");
-        sender.sendMessage("/%s reload : reload config and restart all bots");
+        if (args.length >= 3 && args[0].equals("sendmessage")) {
+            Channel channel = null;
+            for (Channel ch : this.channels) {
+                if (ch.channel.equals(args[1]))
+                    channel = ch;
+            }
+
+            if (channel == null) {
+                sender.sendMessage(ChatColor.RED + "there is no matching bot");
+                return true;
+            }
+
+            if (!sender.hasPermission("twitchbot.sendmessage.*") && !sender.hasPermission("twitchbot.sendmessage." + channel.channel)) {
+                sender.sendMessage(ChatColor.RED + "You do not have permission!");
+                return true;
+            }
+
+            if (channel.irc == null) {
+                sender.sendMessage(ChatColor.RED + "Bot is not working! Please check bot status.");
+                return true;
+            }
+
+            String msg = args[2];
+            for(int i=3; i<args.length; i++) {
+                msg += " " + args[i];
+            }
+
+            channel.irc.sendMessage(msg);
+            sender.sendMessage("Bot sent message.");
+            return true;
+        }
+
+        sender.sendMessage(String.format("/%s status : show all bots' short status", command));
+        sender.sendMessage(String.format("/%s status (channel) : show bot's status", command));
+        sender.sendMessage(String.format("/%s start (channel) : start bot", command));
+        sender.sendMessage(String.format("/%s stop (channel) : stop bot", command));
+        sender.sendMessage(String.format("/%s restart (channel) : restart bot", command));
+        sender.sendMessage(String.format("/%s reload : reload config and restart all bots", command));
+        sender.sendMessage(String.format("/%s sendmessage (channel) (message): send message to channel.", command));
         return true;
     }
 
     @Override
     public List<String> onTabComplete(CommandSender sender, Command command, String alias, String[] args) {
         if (args.length == 1) {
-            return Stream.of("status", "start", "stop", "restart", "reload").filter(cmd -> cmd.startsWith(args[0])).collect(Collectors.toList());
+            return Stream.of("status", "start", "stop", "restart", "reload", "sendmessage").filter(cmd -> cmd.startsWith(args[0])).collect(Collectors.toList());
         }
-        if (args.length == 2 && Arrays.asList("status", "start", "stop", "restart").contains(args[0])) {
+        if (args.length == 2 && Arrays.asList("status", "start", "stop", "restart", "sendmessage").contains(args[0])) {
             return channels.stream().map(channel -> channel.channel).filter(channel -> channel.startsWith(args[1])).collect(Collectors.toList());
         }
         return new ArrayList<>();
