@@ -152,3 +152,4 @@ moderator of minecraft server can enable or disable bots with plugin commands.
 | /twitchbot stop \<channel\> | turn off a bot. | twitchbot.manage.* or</br>twitchbot.manage.\<channel\> |
 | /twitchbot restart \<channel\> | restart a bot. | twitchbot.manage.* or</br>twitchbot.manage.\<channel\> |
 | /twitchbot reload | reload config and restart all bots | twitchbot.reload |
+| /twitchbot sendmessage \<channel\> \<message\> | send a message to channel | twitchbot.sendmessage.* or</br>twitchbot.sendmessage.\<channel\> |
