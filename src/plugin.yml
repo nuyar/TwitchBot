@@ -1,6 +1,6 @@
 main: kr.nuyar.www.twitchbot.TwitchBot
 name: TwitchBot
-version: '0.2'
+version: '0.3'
 description: make your own Twitch bot for your server.
 author: nuYaR
 website: www.nuyar.kr

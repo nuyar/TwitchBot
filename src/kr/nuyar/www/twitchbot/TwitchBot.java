@@ -25,6 +25,7 @@ public class TwitchBot extends JavaPlugin {
         this.getCommand("twitchbot").setExecutor(this);
         this.getCommand("twitchbot").setTabCompleter(this);
 
+        this.saveDefaultConfig();
 
         readConfig();
         startBots();
